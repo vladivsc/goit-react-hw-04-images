@@ -36,36 +36,3 @@ Modal.propTypes = {
   children: PropTypes.node,
   close: PropTypes.func.isRequired
 }
-/*
-class Modal extends Component {
-  componentDidMount() {
-    window.addEventListener('keydown', this.closeModal);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.closeModal);
-  }
-
-  closeModal = ({ target, currentTarget, code }) => {
-    if (target === currentTarget || code === 'Escape') {
-      this.props.close();
-    }
-  };
-
-  render() {
-    const { children } = this.props;
-    const { closeModal } = this;
-
-    return createPortal(
-      <div className={styles.overlay} onClick={closeModal}>
-        <div className={styles.modal}>
-
-          {children}
-
-        </div>
-      </div>,
-      modalRoot
-    );
-  }
-}
-*/
