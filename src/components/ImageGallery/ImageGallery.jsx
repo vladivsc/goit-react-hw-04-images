@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { memo } from 'react';
 
 import ImageGalleryItem from 'components/ImageGalleryItem/ImageGalleryItem';
 
@@ -20,7 +21,7 @@ const ImageGallery = ({ items, onClick }) => {
   );
 };
 
-export default ImageGallery;
+export default memo(ImageGallery);
 
 ImageGallery.defaultProps = {
   items: [],

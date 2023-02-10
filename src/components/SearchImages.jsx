@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Notiflix from 'notiflix';
 
 import Searchbar from './Searchbar/Searchbar';
@@ -7,95 +7,83 @@ import Button from './Button/Button';
 import Loader from './Loader/Loader';
 import Modal from './Modal/Modal';
 
-import { fetchImages } from './services/posts-api';
+import { fetchData } from './services/posts-api';
 
-class SearchImages extends Component {
-  state = {
-    items: [],
-    search: "",
-    loading: false,
-    error: null,
-    page: 1,
-    total: 0,
-    showModal: false,
-    imgDetails: null
-  };
+const SearchImages = () => {
+  const [search, setSearch] = useState('');
+  const [items, setItems] = useState([]);
+  const [loading, setloading] = useState(false);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [showModal, setShowModal] = useState(false);
+  const [imgDetails, setImgDetails] = useState(null);
 
-  componentDidUpdate(prevProps, prevState) {
-    const { search, page } = this.state;
-    if (prevState.search !== search || prevState.page !== page) {
-      this.fetchImages();
+  useEffect(() => {
+    if (!search) {
+      return;
     }
-  }
-
-  async fetchImages() {
-    try {
-      this.setState({ loading: true });
-      const { search, page } = this.state;
-      const { hits, totalHits } = await fetchImages(search, page);
-      if (hits.length === 0) {
-        Notiflix.Notify.warning('No result found!');
+    const fetchImages = async () => {
+      try {
+        setloading(true);
+        const { hits, totalHits } = await fetchData(search, page);
+        if (hits.length === 0) {
+          Notiflix.Notify.warning('No result found!');
+        }
+        setItems(items => [...items, ...hits]);
+        setTotal(totalHits);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setloading(false);
       }
-      this.setState(({ items }) => ({
-        items: [...items, ...hits],
-        total: totalHits,
-      }));
-    } catch (error) {
-      this.setState({ error: error.message });
-    } finally {
-      this.setState({ loading: false });
-    }
-  }
+    };
+    fetchImages();
+  }, [search, page]);
 
-  searchImages = ({ search }) => {
-    this.setState({ search, items: [], page: 1 });
-  };
+  const searchImages = useCallback(({ search }) => {
+    setSearch(search);
+    setItems([]);
+    setPage(1);
+  }, []);
 
-  loadMore = () => {
-    this.setState(({ page }) => ({ page: page + 1 }));
-  };
+  const openModal = useCallback((largeImageURL, tags) => {
+    setShowModal(true);
+    setImgDetails({ largeImageURL, tags });
+  }, []);
 
-  openModal = ( largeImageURL, tags ) => {
-    this.setState({
-      showModal: true,
-      imgDetails: { largeImageURL, tags, }
-    });
-  };
+  const closeModal = useCallback(() => {
+    setShowModal(false);
+    setImgDetails(null);
+  }, [])
 
-  closeModal = () => {
-    this.setState({
-      showModal: false,
-      imgDetails: null,
-    });
-  };
+  const loadMore = useCallback(() => {
+    setPage(prevPage => prevPage + 1);
+  }, [])
 
-  render() {
-    const { items, page, total, loading, error, showModal, imgDetails } = this.state;
-    const { searchImages, loadMore, openModal, closeModal } = this;
-    const isImages = Boolean(items.length);
-    const totalPage = Math.ceil(total / 12);
+  const isImages = Boolean(items.length);
+  const totalPage = Math.ceil(total / 12);
 
-    return (
-      <>
-        <Searchbar onSubmit={searchImages} />
-        <ImageGallery items={items} onClick={openModal} />
-        
-        {loading && <Loader />}
+  return (
+    <>
+      <Searchbar onSubmit={searchImages} />
+      <ImageGallery items={items} onClick={openModal} />
 
-        {error && Notiflix.Notify.failure('Something has gone wrong :(')}
+      {loading && <Loader />}
 
-        {isImages && page < totalPage && (
-          <Button onLoadMore={loadMore} text={'Load more'} />
-        )}
+      {error && Notiflix.Notify.failure('Something has gone wrong :(')}
 
-        {showModal && (
-          <Modal close={closeModal}>
-            <img src={imgDetails.largeImageURL} alt={imgDetails.tags} />
-          </Modal>
-        )}
-      </>
-    );
-  }
-} 
+      {isImages && page < totalPage && (
+        <Button onLoadMore={loadMore} text={'Load more'} />
+      )}
+
+      {showModal && (
+        <Modal close={closeModal}>
+          <img src={imgDetails.largeImageURL} alt={imgDetails.tags} />
+        </Modal>
+      )}
+    </>
+  );
+};
 
 export default SearchImages;
